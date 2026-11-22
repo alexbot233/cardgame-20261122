@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ember Duel — a three-lane card duel</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <div id="embers"></div>
+
+      <div id="titleScreen" class="screen">
+        <div class="title-rings"></div>
+        <div class="title-content">
+          <div class="overline">✦ &nbsp;A DUEL OF FOUR ELEMENTS&nbsp; ✦</div>
+          <h1 class="wordmark"><span>EMBER</span><span>DUEL</span></h1>
+          <p class="tagline">Three lanes. Three energy. Read the rival. Break the hearth.</p>
+          <div id="titleSuits" class="suit-row"></div>
+          <div class="start-pill">PRESS START <small>ENTER / CLICK</small></div>
+          <div class="title-controls">
+            <kbd>1–5</kbd> pick card <kbd>← →</kbd> choose lane <kbd>ENTER</kbd> commit <kbd>SPACE</kbd> clash <kbd>U</kbd> undo
+          </div>
+        </div>
+      </div>
+
+      <div id="tableScreen" class="screen hidden">
+        <div id="topbar"></div>
+        <div class="foe-zone">
+          <div class="zone-label">RIVAL HAND · FACE UP</div>
+          <div id="foeHand"></div>
+        </div>
+        <div id="comboBar"></div>
+        <div id="lanes"></div>
+        <div id="message"></div>
+        <div class="hand-zone">
+          <div class="zone-label">YOUR HAND · CLICK OR DRAG TO A LANE</div>
+          <div id="playerHand"></div>
+        </div>
+        <div id="footer">
+          <div class="keyhints">
+            <kbd>1–5</kbd> select <kbd>← →</kbd> lane <kbd>ENTER</kbd> play <kbd>SPACE</kbd> clash <kbd>U</kbd> undo <kbd>R</kbd> restart
+          </div>
+          <div class="actions">
+            <button id="undoBtn" class="btn small" type="button">UNDO <kbd>U</kbd></button>
+            <button id="endBtn" class="btn primary" type="button">CLASH! <kbd>SPACE</kbd></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="endScreen" class="screen hidden">
+        <div class="ember-burst"></div>
+        <div class="grey-dim"></div>
+        <div class="end-rays"></div>
+        <div class="end-card">
+          <div id="endGlyph"></div>
+          <div id="endKicker"></div>
+          <h2 id="endTitle"></h2>
+          <p id="endLine"></p>
+          <div id="endStats"></div>
+          <div id="endLanes"></div>
+          <div id="restartBtn" class="btn primary">DUEL AGAIN <kbd>ENTER</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
