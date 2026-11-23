@@ -10,6 +10,7 @@
   <div id="app">
     <div id="stage">
       <div id="embers"></div>
+      <button id="muteBtn" class="mute-btn" type="button" aria-label="Toggle sound" aria-pressed="false" title="Toggle sound (M)">♪ SOUND ON</button>
 
       <div id="titleScreen" class="screen">
         <div class="title-rings"></div>
@@ -20,7 +21,7 @@
           <div id="titleSuits" class="suit-row"></div>
           <div class="start-pill">PRESS START <small>ENTER / CLICK</small></div>
           <div class="title-controls">
-            <kbd>1–5</kbd> pick card <kbd>← →</kbd> choose lane <kbd>ENTER</kbd> commit <kbd>SPACE</kbd> clash <kbd>U</kbd> undo
+            <kbd>1–5</kbd> pick card <kbd>← →</kbd> choose lane <kbd>ENTER</kbd> commit <kbd>SPACE</kbd> clash <kbd>U</kbd> undo <kbd>M</kbd> mute
           </div>
         </div>
       </div>
@@ -40,7 +41,7 @@
         </div>
         <div id="footer">
           <div class="keyhints">
-            <kbd>1–5</kbd> select <kbd>← →</kbd> lane <kbd>ENTER</kbd> play <kbd>SPACE</kbd> clash <kbd>U</kbd> undo <kbd>R</kbd> restart
+            <kbd>1–5</kbd> select <kbd>← →</kbd> lane <kbd>ENTER</kbd> play <kbd>SPACE</kbd> clash <kbd>U</kbd> undo <kbd>R</kbd> restart <kbd>M</kbd> mute
           </div>
           <div class="actions">
             <button id="undoBtn" class="btn small" type="button">UNDO <kbd>U</kbd></button>
@@ -61,6 +62,21 @@
           <div id="endStats"></div>
           <div id="endLanes"></div>
           <div id="restartBtn" class="btn primary">DUEL AGAIN <kbd>ENTER</kbd></div>
+        </div>
+      </div>
+
+      <div id="tutorialRoot" class="tutorial hidden" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+        <div class="tutorial-scrim"></div>
+        <div class="tutorial-card">
+          <div class="tutorial-head"><span id="tutorialNum">01 / 03</span><span>EMBER DUEL · FIELD GUIDE</span></div>
+          <div id="tutorialGlyph" class="tutorial-glyph"></div>
+          <h3 id="tutorialTitle"></h3>
+          <p id="tutorialBody"></p>
+          <div id="tutorialDots" class="tutorial-dots"></div>
+          <div class="tutorial-actions">
+            <button id="tutorialSkip" class="btn small" type="button">SKIP <kbd>ESC</kbd></button>
+            <button id="tutorialNext" class="btn primary" type="button">NEXT <kbd>ENTER</kbd></button>
+          </div>
         </div>
       </div>
     </div>

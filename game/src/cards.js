@@ -29,11 +29,21 @@ export function suitIcon(suit, size = 24, cls = '') {
 }
 
 export const KEYWORDS = {
-  pierce: { label: 'PIERCE', glyph: '↯', hint: 'Ignores the guard in its lane' },
-  ward:   { label: 'WARD',   glyph: '◇', hint: 'Shields the neighbouring lanes with half its guard' },
-  rally:  { label: 'RALLY',  glyph: '✦', hint: '+1 attack for each ally in the lane' },
-  siphon: { label: 'SIPHON', glyph: '✚', hint: 'Heal 1 when this side wins the lane' },
+  pierce: { label: 'PIERCE', glyph: '↯', hint: 'Ignores the guard in its lane', short: 'ignores lane guard' },
+  ward:   { label: 'WARD',   glyph: '◇', hint: 'Shields the neighbouring lanes with half its guard', short: 'half guard shields neighbours' },
+  rally:  { label: 'RALLY',  glyph: '✦', hint: '+1 attack for each ally in the lane', short: '+1 attack per ally here' },
+  siphon: { label: 'SIPHON', glyph: '✚', hint: 'Heal 1 when this side wins the lane', short: 'heal 1 on a lane win' },
 };
+
+// One-line hover tip for full-size hand cards: the keyword (or the card's
+// HOLD/BREAK role), plus the suit combo it feeds. Mini cards stay uncluttered.
+export function cardTip(card) {
+  const suit = SUITS[card.suit];
+  const combo = `2+ ${suit.label.toUpperCase()}: ${suit.bonus}`;
+  if (card.kw) return `${KEYWORDS[card.kw].label} · ${KEYWORDS[card.kw].short} · ${combo}`;
+  if (card.guard >= card.atk) return `HOLD · ${card.guard} guard blocks attacks here · ${combo}`;
+  return `BREAK · ${card.atk} attack must beat rival guard · ${combo}`;
+}
 
 export const SWORD = svg('<path d="m20.4 2.6-3.9 1.2-9.6 9.6 3.9 3.9 9.6-9.6Zm-11.4 12-2.1 2.1m-.8-5.2 2.4 2.4M2 22l4.4-1.4-2.9-2.9Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>');
 export const SHIELD = svg('<path d="M12 2 3.5 5.3v6.2c0 5.1 3.4 8.6 8.5 10.5 5.1-1.9 8.5-5.4 8.5-10.5V5.3Z" fill="currentColor" opacity=".9"/><path d="M12 5.6 6.2 7.6v4c0 3.5 2.2 6 5.8 7.4 3.6-1.4 5.8-3.9 5.8-7.4v-4Z" fill="#0c1420" opacity=".5"/>');

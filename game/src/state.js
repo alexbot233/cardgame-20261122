@@ -28,6 +28,7 @@ export function createGame(seed = 1) {
     p: { hand: [], deck: shuffle(freshDeck(), makeRng(seed * 7 + 11)), discard: [] },
     f: { hand: [], deck: shuffle(freshDeck(), makeRng(seed * 13 + 5)), discard: [] },
     placements: [], intents: [], lastClash: null,
+    totalDmg: { p: 0, f: 0 }, broke: { p: null, f: null },
     selected: null, cursor: 0, fx: null, foeMood: '',
     message: 'READ THE RIVAL’S INTENT. THEN COMMIT YOUR HAND.',
   };
@@ -97,6 +98,13 @@ export function endTurn(state) {
   const out = resolveClash(playerLanes, foeLanes);
   const dealtP = sum(out.results.map((r) => r.fDmg));
   const dealtF = sum(out.results.map((r) => r.pDmg));
+  state.totalDmg.p += dealtF;
+  state.totalDmg.f += dealtP;
+  for (const side of ['p', 'f']) {
+    if (state.broke[side]) continue;
+    const lane = out.results.findIndex((r) => r.winner === side);
+    if (lane >= 0) state.broke[side] = ROMAN[lane];
+  }
   state.life.p = clamp(state.life.p - dealtP + out.pHeal);
   state.life.f = clamp(state.life.f - dealtF + out.fHeal);
   state.lastClash = out.results;
@@ -129,6 +137,6 @@ export function endTurn(state) {
     out.fxP.trinity ? ' · TRINITY +2 ATK' : '',
   ].join('');
   state.message = `LANE ${ROMAN[best]}: ${out.results[best].pDmg} DAMAGE${extra || ' · CLEAN CLASH'}`;
-  state.fx = { kind: 'clash', results: out.results, dealtP, dealtF };
+  state.fx = { kind: 'clash', results: out.results, dealtP, dealtF, pHeal: out.pHeal, fHeal: out.fHeal };
   return true;
 }

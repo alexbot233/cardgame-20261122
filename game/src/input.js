@@ -2,6 +2,7 @@
 import { createGame, toggleSelect, placeCard, undoPlacement, endTurn } from './state.js';
 import { stagePoint } from './render.js';
 import { SFX } from './audio.js';
+import { tutorialOpen, showTutorial, advanceTutorial } from './tutorial.js';
 import { LANE_COUNT } from './rules.js';
 
 export function bindInput(app, commit) {
@@ -9,6 +10,7 @@ export function bindInput(app, commit) {
     app.state = createGame(app.seed);
     SFX.play('deal');
     commit();
+    showTutorial();
   };
 
   function place(index, lane) {
@@ -30,7 +32,22 @@ export function bindInput(app, commit) {
     commit();
   }
 
+  function clash() {
+    if (endTurn(app.state)) {
+      SFX.play('clash');
+      if (app.state.phase === 'win') SFX.play('win');
+      else if (app.state.phase === 'loss') SFX.play('loss');
+      commit();
+    }
+  }
+
   document.addEventListener('click', (event) => {
+    if (tutorialOpen()) {
+      if (event.target.closest('#tutorialSkip')) advanceTutorial(true);
+      else if (event.target.closest('#tutorialNext')) advanceTutorial();
+      return;
+    }
+    if (event.target.closest('#muteBtn')) { SFX.toggleMuted(); return; }
     const s = app.state;
     if (!s || s.phase === 'title') { start(); return; }
     if (s.phase === 'win' || s.phase === 'loss') {
@@ -47,9 +64,7 @@ export function bindInput(app, commit) {
     const lane = event.target.closest('.lane');
     if (lane) { place(s.selected, Number(lane.dataset.lane)); return; }
     if (event.target.closest('#undoBtn')) { if (undoPlacement(s)) { SFX.play('select'); commit(); } return; }
-    if (event.target.closest('#endBtn')) {
-      if (endTurn(s)) { SFX.play('clash'); commit(); }
-    }
+    if (event.target.closest('#endBtn')) clash();
   });
 
   document.addEventListener('dragstart', (event) => {
@@ -79,8 +94,14 @@ export function bindInput(app, commit) {
 
   document.addEventListener('keydown', (event) => {
     if (app.shot) return;
-    const s = app.state;
     const key = event.key;
+    if (tutorialOpen()) {
+      if (key === 'Escape') { event.preventDefault(); advanceTutorial(true); }
+      else if (key === 'Enter' || key === ' ' || key === 'ArrowRight') { event.preventDefault(); advanceTutorial(); }
+      return;
+    }
+    if (key.toLowerCase() === 'm') { SFX.toggleMuted(); return; }
+    const s = app.state;
     if (!s || s.phase === 'title') {
       if (key === 'Enter' || key === ' ') { event.preventDefault(); start(); }
       return;
@@ -109,7 +130,7 @@ export function bindInput(app, commit) {
       place(s.selected, s.cursor);
     } else if (key === ' ' || key === 'Spacebar') {
       event.preventDefault();
-      if (endTurn(s)) { SFX.play('clash'); commit(); }
+      clash();
     } else if (key === 'Backspace' || key.toLowerCase() === 'u') {
       event.preventDefault();
       if (undoPlacement(s)) { SFX.play('select'); commit(); }

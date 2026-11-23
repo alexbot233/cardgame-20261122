@@ -4,6 +4,7 @@ import { SUITS, SUIT_KEYS, suitIcon } from './cards.js';
 import { sceneFor } from './shots.js';
 import { render, applyFx, paintEmbers } from './render.js';
 import { bindInput } from './input.js';
+import { SFX } from './audio.js';
 
 const params = new URLSearchParams(location.search);
 const shot = params.get('shot');
@@ -40,6 +41,7 @@ function fitStage() {
 
 paintEmbers();
 paintTitle();
+SFX.syncButton();
 fitStage();
 window.addEventListener('resize', fitStage);
 if (!app.shot) bindInput(app, app.commit);

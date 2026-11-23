@@ -1,5 +1,5 @@
 // Ember Duel — DOM rendering. One pass paints every screen; CSS owns the polish.
-import { SUITS, KEYWORDS, SWORD, SHIELD } from './cards.js';
+import { SUITS, KEYWORDS, SWORD, SHIELD, cardTip } from './cards.js';
 import { resolveClash, ROMAN, LANE_COUNT } from './rules.js';
 
 const $ = (id) => document.getElementById(id);
@@ -16,11 +16,12 @@ function cardHtml(card, opts = {}) {
   const kw = card.kw
     ? `<span class="kw" title="${KEYWORDS[card.kw].hint}">${KEYWORDS[card.kw].glyph}${opts.mini ? '' : ` ${KEYWORDS[card.kw].label}`}</span>` : '';
   const tag = opts.tag ? `<span class="hand-tag">${opts.tag}</span>` : '';
+  const tip = opts.tip ? `<span class="tip">${cardTip(card)}</span>` : '';
   const index = opts.index === undefined ? '' : ` data-index="${opts.index}"`;
   return `<div class="card suit-${card.suit}${opts.mini ? ' mini' : ''}${opts.intent ? ' intent' : ''}${opts.selected ? ' selected' : ''}${opts.cls ? ` ${opts.cls}` : ''}"
       data-uid="${card.uid}"${index} tabindex="0" role="button"${opts.index !== undefined ? ' draggable="true"' : ''}
       aria-label="${card.name}, ${suit.label}, cost ${card.cost}, ${card.atk} attack, ${card.guard} guard">
-    ${tag}${kw}
+    ${tag}${kw}${tip}
     <div class="cost"><b>${card.cost}</b></div>
     ${icon(card.suit, 22, 'crest')}
     <div class="art">${icon(card.suit, 66, 'watermark')}</div>
@@ -116,7 +117,7 @@ function renderTable(s) {
   $('lanes').innerHTML = Array.from({ length: LANE_COUNT }, (_, i) => laneHtml(s, i, preview)).join('');
   $('message').textContent = s.message;
   $('playerHand').innerHTML = s.p.hand.map((c, i) =>
-    cardHtml(c, { index: i, selected: s.selected === i, cls: c.cost > s.energy ? 'unaffordable' : '' })).join('');
+    cardHtml(c, { index: i, tip: true, selected: s.selected === i, cls: c.cost > s.energy ? 'unaffordable' : '' })).join('');
 
   $('undoBtn').disabled = !s.placements.length;
   $('endBtn').disabled = !s.placements.length;
@@ -128,9 +129,6 @@ function renderEnd(s) {
   end.className = `screen end ${win ? 'win' : 'loss'}`;
   $('endKicker').textContent = win ? 'THE LAST EMBER FALLS' : 'THE HEARTH IS SILENT';
   $('endTitle').textContent = win ? 'VICTORY' : 'DEFEAT';
-  $('endLine').textContent = win
-    ? 'Three lanes broken. The rival yields the flame.'
-    : 'The rival’s tide outlasted your guard.';
   $('endStats').innerHTML = `<span>TURNS <b>${String(s.turn - 1).padStart(2, '0')}</b></span>
     <span>YOU <b>${s.life.p}</b></span><span>RIVAL <b>${s.life.f}</b></span>`;
   $('endGlyph').innerHTML = icon(win ? 'ember' : 'tide', 118, 'end-sigil');
@@ -138,6 +136,20 @@ function renderEnd(s) {
   const final = s.finalCards ?? { p: [[], [], []], f: [[], [], []] };
   const results = resolveClash(final.p, final.f).results;
   const side = win ? 'p' : 'f';
+  // One-line recap: the first lane this side broke and the damage it dealt.
+  // Staged ?shot= scenes have no running totals, so fall back to the final clash.
+  const clash = s.lastClash ?? results;
+  const dmgOf = (r) => (side === 'p' ? r.pDmg : r.fDmg);
+  let broke = s.broke?.[side];
+  if (!broke && clash.length) {
+    let best = 0;
+    clash.forEach((r, i) => { if (dmgOf(r) > dmgOf(clash[best])) best = i; });
+    broke = ROMAN[best];
+  }
+  const total = s.totalDmg?.[side] ?? clash.reduce((n, r) => n + dmgOf(r), 0);
+  $('endLine').textContent = win
+    ? `Lane ${broke ?? 'I'} broke first · ${total} damage dealt across ${Math.max(1, s.turn - 1)} turns.`
+    : `The rival broke lane ${broke ?? 'I'} first · ${total} damage to your hearth.`;
   const order = results.map((r, i) => ({ i, r }));
   const decisive = order.filter(({ r }) => r.winner === side)
     .concat(order.filter(({ r, i }) => final[side][i].length && r.winner !== side))
@@ -170,6 +182,15 @@ export function stagePoint(rect, app) {
   return { x: (rect.left - origin.left) / app.scale, y: (rect.top - origin.top) / app.scale };
 }
 
+function floatText(host, text, cls = '', delay = 0) {
+  const el = document.createElement('div');
+  el.className = `float ${cls}`;
+  el.textContent = text;
+  el.style.animationDelay = `${delay}ms`;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
 export function applyFx(app) {
   const fx = app.state?.fx;
   if (!fx || app.shot) { if (app.state) app.state.fx = null; return; }
@@ -194,16 +215,28 @@ export function applyFx(app) {
   if (fx.kind === 'clash') {
     table.classList.add('shake');
     document.querySelectorAll('.lane').forEach((lane, i) => {
-      if (fx.results[i].pDmg || fx.results[i].fDmg) {
-        lane.classList.add('clashing');
-        const hit = document.createElement('div');
-        hit.className = 'impact';
-        hit.textContent = fx.results[i].pDmg ? `-${fx.results[i].pDmg}` : `+${fx.results[i].fDmg}`;
-        lane.appendChild(hit);
-        setTimeout(() => hit.remove(), 900);
-      }
+      const r = fx.results[i];
+      if (!r) return;
+      const mine = lane.querySelectorAll('.lane-you .card');
+      const theirs = lane.querySelectorAll('.lane-foe .card');
+      // Both sides lunge at the clash line; whoever took damage reels back.
+      mine.forEach((el) => el.classList.add('lunge-you'));
+      theirs.forEach((el) => el.classList.add('lunge-foe'));
+      if (r.fDmg) mine.forEach((el) => el.classList.add('hit-shake'));
+      if (r.pDmg) theirs.forEach((el) => el.classList.add('hit-shake'));
+      if (r.pDmg || r.fDmg) lane.classList.add('clashing');
+      if (r.pDmg) floatText(lane, `−${r.pDmg}`, 'damage to-foe');
+      if (r.fDmg) floatText(lane, `−${r.fDmg}`, 'damage to-you', 90);
+      if (r.pDmg && r.pierceP) floatText(lane, 'PIERCE', 'tag to-foe', 160);
+      if (r.fDmg && r.pierceF) floatText(lane, 'PIERCE', 'tag to-you', 240);
     });
-    setTimeout(() => { table.classList.remove('shake'); document.querySelectorAll('.clashing').forEach((n) => n.classList.remove('clashing')); }, 700);
+    if (fx.pHeal) floatText($('stage'), `+${fx.pHeal} HEAL`, 'heal heal-p', 260);
+    if (fx.fHeal) floatText($('stage'), `+${fx.fHeal} HEAL`, 'heal heal-f', 320);
+    setTimeout(() => {
+      table.classList.remove('shake');
+      document.querySelectorAll('.clashing, .lunge-you, .lunge-foe, .hit-shake')
+        .forEach((n) => n.classList.remove('clashing', 'lunge-you', 'lunge-foe', 'hit-shake'));
+    }, 850);
   }
   const end = $('endScreen');
   const flourish = fx.kind === 'win' || fx.kind === 'loss';
